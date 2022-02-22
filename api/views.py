@@ -283,8 +283,9 @@ class ApproveMeeting(APIView):
             querysetmeeting.save(update_fields=['pending'])
             querysetuser.save(update_fields=['official_appointed'])
             meeting=MeetingSerializer(querysetmeeting).data
+            official_address=OfficialsSerializer(Officials.objects.get(id=meeting['official'])).data['official_account']
             print(user,meeting)
-            return Response({'response':True}, status=status.HTTP_200_OK)
+            return Response({'response':True,'official_address':official_address }, status=status.HTTP_200_OK)
         except:
             pass
         return Response({'response':False}, status=status.HTTP_200_OK)
@@ -313,6 +314,8 @@ class ShowAllMeetingsForAdmin(APIView):
             for query in querysetmeetings:
                 serializers=MeetingSerializer(query)
                 meet=serializers.data
+                meet['user_blockchain_address']=UserSerializer(User.objects.get(id=meet['user'])).data['blockchain_address']
+                meet['official_blockchain_address']=OfficialsSerializer(Officials.objects.get(id=meet['official'])).data['official_account']
                 print(meet,type(meet))
                 allMeetings.append(meet)
             return Response({'response':True, 'meetings':allMeetings}, status=status.HTTP_200_OK)            
