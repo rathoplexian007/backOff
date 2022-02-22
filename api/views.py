@@ -11,10 +11,10 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .serializers import *
-from channels.generic.websocket import AsyncWebsocketConsumer
+
 
 # Create your views here.
-from web3 import Web3
+
 import json
 import random
 from datetime import datetime, timedelta
@@ -110,36 +110,7 @@ class MeetingView(generics.ListCreateAPIView):
     queryset=Meeting.objects.all()
     serializer_class=MeetingSerializer
 
-class VideoConferenceView(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.room_group_name='testRoom'
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-        await self.accept()
 
-    async def receive(self, text_data):
-        order_data_json =json.loads(text_data)
-        message=order_data_json['message']
-        action=order_data_json['action']
-        print('recieved dictionary meant to be sent',message)
-        if action=='new-offer' or action=='new-answer':
-            recieved_channel_name=order_data_json['message']['receiver_channel_name']
-            order_data_json['message']['receiver_channel_name']=self.channel_name
-            await self.channel_layer.send(recieved_channel_name,{'type':'send.sdp', 'received_dict':order_data_json})         
-            return
-
-        recieved_dict=json.loads(text_data)
-        recieved_dict['message']['receiver_channel_name']=self.channel_name
-        
-        await self.channel_layer.group_send(self.room_group_name,{'type':'send.sdp', 'received_dict':recieved_dict})
-
-    async def send_sdp(self, event):
-        received_dict=event['received_dict']
-        print(event,'group forwarding')
-        await self.send(text_data=json.dumps(received_dict))
-
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-        print('disconneded')
 
 class UnappointedView(APIView):
     def post(self, request):
@@ -283,8 +254,9 @@ class ApproveMeeting(APIView):
             querysetmeeting.save(update_fields=['pending'])
             querysetuser.save(update_fields=['official_appointed'])
             meeting=MeetingSerializer(querysetmeeting).data
+            official_address=OfficialsSerializer(Officials.objects.get(id=meeting['official'])).data['official_account']
             print(user,meeting)
-            return Response({'response':True}, status=status.HTTP_200_OK)
+            return Response({'response':True,'official_address':official_address }, status=status.HTTP_200_OK)
         except:
             pass
         return Response({'response':False}, status=status.HTTP_200_OK)
@@ -313,6 +285,8 @@ class ShowAllMeetingsForAdmin(APIView):
             for query in querysetmeetings:
                 serializers=MeetingSerializer(query)
                 meet=serializers.data
+                meet['user_blockchain_address']=UserSerializer(User.objects.get(id=meet['user'])).data['blockchain_address']
+                meet['official_blockchain_address']=OfficialsSerializer(Officials.objects.get(id=meet['official'])).data['official_account']
                 print(meet,type(meet))
                 allMeetings.append(meet)
             return Response({'response':True, 'meetings':allMeetings}, status=status.HTTP_200_OK)            
