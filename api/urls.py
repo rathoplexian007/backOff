@@ -15,8 +15,12 @@ urlpatterns = [
     path('updateofficials/<int:pk>',UpdateOfficial.as_view()),
     path('deletemeetings/<int:pk>/delete',DeleteMeetings.as_view()),
     path('getmeetings/',ShowMeetings.as_view()),
-    path('approverequest/',ApproveMeeting.as_view()),
-    path('deleterequest/',DeleteMeeting.as_view()),
+    path('approvemeeting/',ApproveMeeting.as_view()),
+    path('deletemeeting/',DeleteMeeting.as_view()),
     path('getallmeetings/',ShowAllMeetingsForAdmin.as_view()),
+    path('approverequest/',ApproveKYC.as_view()),
+    path('rejectrequest/',RejectKYC.as_view()),
+    path('status/',Status.as_view()),
+
     # path('concall/', VideoConferenceView.as_view())
 ]

@@ -139,6 +139,7 @@ class UnappointedView(APIView):
             randomUser=serializer.data
             print(official['available_time'])
             randomUser['onTime']=official['available_time']
+            randomUser['response']=True
             return Response(randomUser, status=status.HTTP_200_OK)
 
             # random user has been selected
@@ -293,4 +294,56 @@ class ShowAllMeetingsForAdmin(APIView):
         except:
             pass
         return Response({'response':False}, status=status.HTTP_200_OK)
+        
+class ApproveKYC(APIView):
+    def post(self, request):
+        try:
+            print(request.data)
+            user=User.objects.get(blockchain_address=request.data.get('blockchain_address'))
+            userserializer=UserSerializer(user)
+            print(userserializer.data)
+            # kyc record for user set true
+            user.kyc_done=True
+            # delete meeting that are currently active
+            meeting=Meeting.objects.get(user=userserializer.data.get('id'))
+            meetingserializer=MeetingSerializer(meeting)
+            print(meetingserializer.data)
+            # finalize
+            user.save()
+            meeting.delete()
+            return Response({'response':True}, status=status.HTTP_200_OK)
+        except:
+            pass
+        return Response({'response':False}, status=status.HTTP_200_OK)
 
+class RejectKYC(APIView):
+    def post(self, request):
+        try:
+            print(request.data)
+            user=User.objects.get(blockchain_address=request.data.get('blockchain_address'))
+            userserializer=UserSerializer(user)
+            print(userserializer.data)
+            # kyc record for user set true
+            user.official_appointed=False
+            # delete meeting that are currently active
+            meeting=Meeting.objects.get(user=userserializer.data.get('id'))
+            meetingserializer=MeetingSerializer(meeting)
+            print(meetingserializer.data)
+            # finalize
+            user.save()
+            meeting.delete()
+            return Response({'response':True}, status=status.HTTP_200_OK)
+        except:
+            pass
+        return Response({'response':False}, status=status.HTTP_200_OK)
+
+class Status(APIView):
+    def post(self, request):
+        try:
+            print(request.data)
+            user=UserSerializer(User.objects.get(blockchain_address=request.data.get('blockchain_address')))
+            print(user.data)
+            return Response({'response':True, 'kyc_done': user.data.get('kyc_done'), 'official_appointed': user.data.get('official_appointed')}, status=status.HTTP_200_OK)
+        except:
+            pass
+        return Response({'response':False}, status=status.HTTP_200_OK)

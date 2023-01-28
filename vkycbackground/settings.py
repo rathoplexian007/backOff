@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api.apps.ApiConfig',
     'rest_framework',
-    'django_google.apps.DjangoGoogleConfig',
+    # 'django_google.apps.DjangoGoogleConfig',
     'corsheaders',
     'channels'
 ]
